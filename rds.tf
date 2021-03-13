@@ -67,13 +67,13 @@ resource "aws_rds_cluster" "backend_store" {
   port                      = local.db_port
   db_subnet_group_name      = aws_db_subnet_group.rds.name
   vpc_security_group_ids    = [aws_security_group.rds.id]
-  availability_zones        = data.aws_availability_zones.available.names
+  availability_zones        = [data.aws_availability_zones.available.names[0]]
   master_username           = "ecs_task"
   database_name             = "mlflow"
   skip_final_snapshot       = var.database_skip_final_snapshot
   final_snapshot_identifier = var.unique_name
   master_password           = data.aws_secretsmanager_secret_version.db_password.secret_string
-  backup_retention_period   = 14
+  backup_retention_period   = 90
 
   scaling_configuration {
     max_capacity             = var.database_max_capacity
