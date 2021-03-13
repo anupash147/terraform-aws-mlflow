@@ -73,7 +73,7 @@ resource "aws_rds_cluster" "backend_store" {
   skip_final_snapshot       = var.database_skip_final_snapshot
   final_snapshot_identifier = var.unique_name
   master_password           = data.aws_secretsmanager_secret_version.db_password.secret_string
-  backup_retention_period   = 90
+  backup_retention_period   = 14
 
   scaling_configuration {
     max_capacity             = var.database_max_capacity
