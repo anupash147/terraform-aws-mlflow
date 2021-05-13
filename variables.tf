@@ -144,3 +144,9 @@ variable "artifact_bucket_encryption_key_arn" {
   type        = string
   default     = null
 }
+
+variable "gunicorn_opts" {
+  description = "Additional command line options forwarded to gunicorn processes (https://mlflow.org/docs/latest/cli.html#cmdoption-mlflow-server-gunicorn-opts)"
+  type        = string
+  default     = ""
+}
