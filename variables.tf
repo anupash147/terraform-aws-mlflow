@@ -35,6 +35,13 @@ variable "service_subnet_ids" {
   description = "List of subnets where the MLflow ECS service will be deployed (the recommendation is to use subnets that cannot be accessed directly from the Internet)"
 }
 
+variable "service_image" {
+  type        = string
+  default     = "larribas/mlflow"
+  description = "The MLflow image to deploy. Note that this version has to be available as a tag here: https://hub.docker.com/r/larribas/mlflow"
+}
+
+
 variable "service_image_tag" {
   type        = string
   default     = "1.9.1"

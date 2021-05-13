@@ -1,7 +1,7 @@
 provider "aws" {
-  region  = "eu-west-1"
+  region  = "us-east-1"
   version = "~> 2.28"
-}
+
 
 resource "random_id" "id" {
   byte_length = 4
