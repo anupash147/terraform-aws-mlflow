@@ -67,7 +67,7 @@ resource "aws_rds_cluster" "backend_store" {
   port                      = local.db_port
   db_subnet_group_name      = aws_db_subnet_group.rds.name
   vpc_security_group_ids    = [aws_security_group.rds.id]
-  availability_zones        = [data.aws_availability_zones.available.names[0]]
+  # availability_zones        = [data.aws_availability_zones.available.names] # ref https://github.com/terraform-aws-modules/terraform-aws-rds-aurora/pull/10
   master_username           = "ecs_task"
   database_name             = "mlflow"
   skip_final_snapshot       = var.database_skip_final_snapshot
