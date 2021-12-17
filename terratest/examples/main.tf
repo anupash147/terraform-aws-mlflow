@@ -1,7 +1,9 @@
 provider "aws" {
-  region  = "us-east-1"
-  version = "~> 2.28"
-
+  region = "us-east-1"
+  shared_credentials_file       = "~/.aws/credentials"
+  profile                       = "saml"
+  
+}
 
 resource "random_id" "id" {
   byte_length = 4
@@ -18,14 +20,14 @@ resource "aws_secretsmanager_secret_version" "db_password" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "2.44.0"
+  version = ">2.44.0"
 
   name               = "mlflow-${random_id.id.hex}"
-  cidr               = "10.0.0.0/16"
-  azs                = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
-  private_subnets    = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  public_subnets     = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
-  database_subnets   = ["10.0.201.0/24", "10.0.202.0/24", "10.0.203.0/24"]
+  cidr               = "10.61.0.0/16"
+  azs                = ["us-east-1a", "us-east-1b", "us-east-1c"]
+  private_subnets    = ["10.61.1.0/24", "10.61.2.0/24", "10.61.3.0/24"]
+  public_subnets     = ["10.61.101.0/24", "10.61.102.0/24", "10.61.103.0/24"]
+  database_subnets   = ["10.61.201.0/24", "10.61.202.0/24", "10.61.203.0/24"]
   enable_nat_gateway = true
 
   tags = {
@@ -34,8 +36,21 @@ module "vpc" {
   }
 }
 
+
+module "bastion" {
+  source = "git::ssh://git@github.platforms.engineering/science-at-scale/infrastructure-management//terraform//aws//modules//network//jumpbox?ref=b8b6c3c"
+
+  vpc_id    = module.vpc.vpc_id
+  vpc_name  = module.vpc.name
+  subnet_id = module.vpc.public_subnets[0]
+  key_name  = "gisele-sbx"
+
+  cost_tags = { Name = "mlflow-terratest-bastion" }
+}
+
 variable "is_private" {
   type = bool
+  default = "false"
 }
 
 variable "artifact_bucket_id" {
@@ -50,7 +65,7 @@ module "mlflow" {
     "owner" = "terratest"
   }
   vpc_id                            = module.vpc.vpc_id
-  database_subnet_ids               = module.vpc.database_subnets
+  database_subnet_ids               = module.vpc.private_subnets
   service_subnet_ids                = module.vpc.private_subnets
   load_balancer_subnet_ids          = var.is_private ? module.vpc.private_subnets : module.vpc.public_subnets
   load_balancer_ingress_cidr_blocks = var.is_private ? [module.vpc.vpc_cidr_block] : ["0.0.0.0/0"]
@@ -58,6 +73,7 @@ module "mlflow" {
   artifact_bucket_id                = var.artifact_bucket_id
   database_password_secret_arn      = aws_secretsmanager_secret_version.db_password.secret_id
   database_skip_final_snapshot      = true
+  additional_sg                     = [ module.bastion.sg_id ]
 }
 
 resource "aws_lb_listener" "http" {

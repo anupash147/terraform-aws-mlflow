@@ -32,7 +32,7 @@ resource "aws_iam_role_policy" "db_secrets" {
     ]
   })
 }
-
+/*
 resource "aws_db_subnet_group" "rds" {
   name       = "${var.unique_name}-rds"
   subnet_ids = var.database_subnet_ids
@@ -61,8 +61,8 @@ resource "aws_security_group" "rds" {
 resource "aws_rds_cluster" "backend_store" {
   cluster_identifier_prefix = var.unique_name
   tags                      = local.tags
-  engine                    = "aurora-mysql"
-  engine_version            = "5.7.mysql_aurora.2.07.1"
+  engine                    = "aurora-postgresql"
+  engine_version            = "aurora-postgresql10"
   engine_mode               = "serverless"
   port                      = local.db_port
   db_subnet_group_name      = aws_db_subnet_group.rds.name
@@ -83,3 +83,54 @@ resource "aws_rds_cluster" "backend_store" {
     timeout_action           = "ForceApplyCapacityChange"
   }
 }
+*/
+################################################################################
+# RDS Aurora Module
+################################################################################
+module "aurora_postgresql" {
+  source = "git::https://github.com/terraform-aws-modules/terraform-aws-rds-aurora.git?ref=v6.1.3"
+
+  name                            = lower("${var.unique_name}-postgresql")
+  engine                          = "aurora-postgresql"
+  engine_mode                     = "serverless"
+  database_name                   = "mlflow_db"
+  engine_version                  = null
+  storage_encrypted               = true
+  vpc_id                          = var.vpc_id
+  subnets                         = var.database_subnet_ids
+  create_security_group           = true
+  allowed_security_groups         = concat([aws_security_group.ecs_service.id],var.additional_sg)
+  monitoring_interval             = 60
+  apply_immediately               = true
+  skip_final_snapshot             = true
+  db_parameter_group_name         = aws_db_parameter_group.aurora_postgresql.id
+  db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.aurora_postgresql.id
+
+  scaling_configuration           = {
+    auto_pause     = false
+    min_capacity   = 2
+    max_capacity   = 16
+    timeout_action = "ForceApplyCapacityChange"
+  }
+
+  master_username                 = "ecs_task"
+  master_password                 = data.aws_secretsmanager_secret_version.db_password.secret_string
+  create_random_password          = false
+  tags                            = local.tags
+
+}
+
+resource "aws_db_parameter_group" "aurora_postgresql" {
+  name        = lower("${var.unique_name}-aurora-db-postgres-parameter-group")
+  family      = "aurora-postgresql10"
+  description = lower("${var.unique_name}-aurora-db-postgres-parameter-group")
+  tags        = local.tags
+}
+
+resource "aws_rds_cluster_parameter_group" "aurora_postgresql" {
+  name        = lower("${var.unique_name}-aurora-postgres-cluster-parameter-group")
+  family      = "aurora-postgresql10"
+  description = lower("${var.unique_name}-aurora-postgres-cluster-parameter-group")
+  tags        = local.tags
+}
+
