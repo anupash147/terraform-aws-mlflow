@@ -37,14 +37,14 @@ variable "service_subnet_ids" {
 
 variable "service_image" {
   type        = string
-  default     = "larribas/mlflow"
+  default     = "anupash147/mlflow"
   description = "The MLflow image to deploy. Note that this version has to be available as a tag here: https://hub.docker.com/r/larribas/mlflow"
 }
 
 
 variable "service_image_tag" {
   type        = string
-  default     = "1.9.1"
+  default     = "1.21.0"
   description = "The MLflow version to deploy. Note that this version has to be available as a tag here: https://hub.docker.com/r/larribas/mlflow"
 }
 
@@ -86,6 +86,7 @@ variable "service_max_capacity" {
 variable "database_subnet_ids" {
   type        = list(string)
   description = "List of subnets where the RDS database will be deployed"
+  default     = []
 }
 
 variable "database_password_secret_arn" {
@@ -156,4 +157,15 @@ variable "gunicorn_opts" {
   description = "Additional command line options forwarded to gunicorn processes (https://mlflow.org/docs/latest/cli.html#cmdoption-mlflow-server-gunicorn-opts)"
   type        = string
   default     = ""
+}
+
+variable "use_rds" {
+  description = "Using existing database"
+  type        = bool
+  default     = false
+}
+
+variable "database" {
+  description = "Provide existing database name"
+  type        = string
 }
