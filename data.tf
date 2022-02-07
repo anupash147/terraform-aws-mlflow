@@ -31,5 +31,28 @@ resource "aws_security_group_rule" "default_ingress" {
   security_group_id        = join(",", data.aws_rds_cluster.database.vpc_security_group_ids)
 }
 
+# needed to read the keys
+resource "aws_iam_role_policy" "db_secrets" {
+  name = "${var.unique_name}-read-db-pass-secret"
+  role = aws_iam_role.ecs_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:ListSecretVersionIds",
+        ]
+        Resource = [
+          data.aws_secretsmanager_secret_version.db_password.arn,
+        ]
+      },
+    ]
+  })
+}
 
 
