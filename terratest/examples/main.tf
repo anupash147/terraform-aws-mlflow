@@ -6,7 +6,7 @@ provider "aws" {
 
 variable "vpc_id" {
   type = string
-  default = "vpc-05df174b01d5d01dd"
+  default = "vpc-08e5a793d06694ea5"
 }
 
 resource "random_id" "id" {
@@ -54,7 +54,7 @@ module "vpc" {
 data "aws_subnet_ids" "Public" {
   filter {
     name   = "tag:Name"
-    values = ["*-public-*"] # insert values here
+    values = ["*-public*"] # insert values here
   }
   vpc_id = var.vpc_id
 }
@@ -63,7 +63,7 @@ data "aws_subnet_ids" "Public" {
 data "aws_subnet_ids" "Private" {
   filter {
     name   = "tag:Name"
-    values = ["*-private-*"] # insert values here
+    values = ["*-private*"] # insert values here
   }
   vpc_id = var.vpc_id
 }
@@ -95,10 +95,10 @@ module "mlflow" {
   load_balancer_ingress_cidr_blocks = var.is_private ? [data.aws_vpc.vpc.cidr_block] : ["0.0.0.0/0"]
   load_balancer_is_internal         = var.is_private
   artifact_bucket_id                = var.artifact_bucket_id
-  database_password_secret_arn      = aws_secretsmanager_secret_version.db_password.secret_id
+  database_password_secret_arn      = "arn:aws:secretsmanager:us-east-1:437491031743:secret:mlflow-terratest20220208230520121000000002-v0Uq1N" # aws_secretsmanager_secret_version.db_password.secret_id
   # database_skip_final_snapshot      = true
   use_rds                           = true
-  database                      = "example-serverless-postgresql"
+  database                          = "rds-test-postgresql"
 }
 
 resource "aws_lb_listener" "http" {
