@@ -43,7 +43,7 @@ module "bastion" {
   vpc_id    = module.vpc.vpc_id
   vpc_name  = module.vpc.name
   subnet_id = module.vpc.public_subnets[0]
-  key_name  = "gisele-sbx"
+  key_name  = "elyeq-mr-np"
 
   cost_tags = { Name = "mlflow-terratest-bastion" }
 }
