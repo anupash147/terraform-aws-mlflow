@@ -1,7 +1,13 @@
 provider "aws" {
-  region  = "us-east-1"
-  version = "~> 2.28"
+  region = "us-east-1"
+  shared_credentials_file = "~/.aws/credentials"
+  profile                 = "saml"
+}
 
+variable "vpc_id" {
+  type = string
+  default = "vpc-05df174b01d5d01dd"
+}
 
 resource "random_id" "id" {
   byte_length = 4
@@ -13,12 +19,22 @@ resource "aws_secretsmanager_secret" "db_password" {
 
 resource "aws_secretsmanager_secret_version" "db_password" {
   secret_id     = aws_secretsmanager_secret.db_password.id
-  secret_string = "ran${random_id.id.hex}dom"
+  #secret_string = jsondecode(nonsensitive(data.aws_secretsmanager_secret_version.rds.secret_string))["password"]
+  secret_string = "UfZgUZdua5"
+}
+/*
+data "aws_secretsmanager_secret" "by-arn" {
+  arn = "arn:aws:secretsmanager:us-east-1:437491031743:secret:rds-db-credentials/cluster-PRIDKZBGUF6XLUPED5DNH77ZRU/mre_v1-jXZH2q"
 }
 
+data "aws_secretsmanager_secret_version" "rds" {
+  secret_id = data.aws_secretsmanager_secret.by-arn.id
+}
+*/
+/*
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "2.44.0"
+  version = ">2.44.0"
 
   name               = "mlflow-${random_id.id.hex}"
   cidr               = "10.0.0.0/16"
@@ -33,9 +49,32 @@ module "vpc" {
     "env"         = "test"
   }
 }
+*/
+
+data "aws_subnet_ids" "Public" {
+  filter {
+    name   = "tag:Name"
+    values = ["*-public-*"] # insert values here
+  }
+  vpc_id = var.vpc_id
+}
+
+
+data "aws_subnet_ids" "Private" {
+  filter {
+    name   = "tag:Name"
+    values = ["*-private-*"] # insert values here
+  }
+  vpc_id = var.vpc_id
+}
+
+data "aws_vpc" "vpc" {
+  id = var.vpc_id
+}
 
 variable "is_private" {
   type = bool
+  default = false
 }
 
 variable "artifact_bucket_id" {
@@ -49,15 +88,17 @@ module "mlflow" {
   tags = {
     "owner" = "terratest"
   }
-  vpc_id                            = module.vpc.vpc_id
-  database_subnet_ids               = module.vpc.database_subnets
-  service_subnet_ids                = module.vpc.private_subnets
-  load_balancer_subnet_ids          = var.is_private ? module.vpc.private_subnets : module.vpc.public_subnets
-  load_balancer_ingress_cidr_blocks = var.is_private ? [module.vpc.vpc_cidr_block] : ["0.0.0.0/0"]
+  vpc_id                            = var.vpc_id
+  # database_subnet_ids               = module.vpc.database_subnets
+  service_subnet_ids                = data.aws_subnet_ids.Private.ids
+  load_balancer_subnet_ids          = var.is_private ? data.aws_subnet_ids.Private.ids : data.aws_subnet_ids.Public.ids
+  load_balancer_ingress_cidr_blocks = var.is_private ? [data.aws_vpc.vpc.cidr_block] : ["0.0.0.0/0"]
   load_balancer_is_internal         = var.is_private
   artifact_bucket_id                = var.artifact_bucket_id
   database_password_secret_arn      = aws_secretsmanager_secret_version.db_password.secret_id
-  database_skip_final_snapshot      = true
+  # database_skip_final_snapshot      = true
+  use_rds                           = true
+  database                      = "example-serverless-postgresql"
 }
 
 resource "aws_lb_listener" "http" {
