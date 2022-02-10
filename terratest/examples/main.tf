@@ -12,7 +12,7 @@ variable "vpc_id" {
 resource "random_id" "id" {
   byte_length = 4
 }
-
+/*
 resource "aws_secretsmanager_secret" "db_password" {
   name_prefix = "mlflow-terratest"
 }
@@ -22,7 +22,7 @@ resource "aws_secretsmanager_secret_version" "db_password" {
   #secret_string = jsondecode(nonsensitive(data.aws_secretsmanager_secret_version.rds.secret_string))["password"]
   secret_string = "UfZgUZdua5"
 }
-/*
+
 data "aws_secretsmanager_secret" "by-arn" {
   arn = "arn:aws:secretsmanager:us-east-1:437491031743:secret:rds-db-credentials/cluster-PRIDKZBGUF6XLUPED5DNH77ZRU/mre_v1-jXZH2q"
 }
