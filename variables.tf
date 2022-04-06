@@ -166,6 +166,11 @@ variable "use_rds" {
 }
 
 variable "database" {
-  description = "Provide existing database name"
+  description = "Provide existing database identifier"
+  type        = string
+}
+
+variable "in_db_database" {
+  description = "For RDS you will need to provide an in db database"
   type        = string
 }
